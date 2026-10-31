@@ -7,3 +7,7 @@
 /* Keep touch feedback consistent with the rounded green selection state. */
 .player{-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .player:focus:not(:focus-visible){outline:none}
+/* Match the selected card to its podium medal. */
+.player.selected.place-0{border:3px solid #d5a400;background:#fff4c7;box-shadow:0 0 0 2px #f2d36a}
+.player.selected.place-1{border:3px solid #9aa5ad;background:#eef1f3;box-shadow:0 0 0 2px #cbd2d7}
+.player.selected.place-2{border:3px solid #b7773e;background:#f8e5d4;box-shadow:0 0 0 2px #ddb18d}
