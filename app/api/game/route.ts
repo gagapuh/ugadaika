@@ -31,8 +31,15 @@ export async function POST(req:Request) { try {
  if(action==='recognize'){
   if(!E.KIMI_API_KEY)return json({error:'KIMI_API_KEY is not configured'},503);
   if(typeof body.image!=='string'||!/^data:image\/(png|jpeg|webp);base64,/.test(body.image)||body.image.length>7000000)return json({error:'Please upload a PNG, JPEG or WebP image under 5 MB'},400);
-  const response=await fetch('https://api.moonshot.ai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${E.KIMI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:E.KIMI_MODEL||'kimi-k2.5',messages:[{role:'user',content:[{type:'text',text:'Read this Reclub screenshot. Return only JSON, no markdown. For a participant list: {"title":"...","start":"...","players":[{"name":"..."}]}. For standings: {"results":[{"name":"...","rank":1}]}. Preserve shared ranks and include every player in ranks 1 to 3. Do not guess unreadable text.'},{type:'image_url',image_url:{url:body.image}}]}]})});
-  if(!response.ok)throw Error('Kimi could not recognize the screenshot'); const x:any=await response.json();const content=x.choices?.[0]?.message?.content||'';const clean=content.replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');return json({data:JSON.parse(clean)});
+  const model=E.KIMI_MODEL||'kimi-k2.6';
+  const response=await fetch('https://api.moonshot.ai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${E.KIMI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model,messages:[{role:'user',content:[{type:'text',text:'Read this Reclub screenshot. Return only JSON, no markdown. For a participant list: {"title":"...","start":"...","players":[{"name":"..."}]}. For standings: {"results":[{"name":"...","rank":1}]}. Preserve shared ranks and include every player in ranks 1 to 3. Do not guess unreadable text.'},{type:'image_url',image_url:{url:body.image}}]}]})});
+  if(!response.ok){
+   const details:any=await response.json().catch(()=>null);
+   const reason=String(details?.error?.message||'Unknown API error').slice(0,300);
+   throw Error(`Kimi API ${response.status}: ${reason}`);
+  }
+  const x:any=await response.json();const content=x.choices?.[0]?.message?.content||'';const clean=content.replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');
+  try{return json({data:JSON.parse(clean)});}catch{throw Error('Kimi returned an unreadable response. Please enter the names manually or try another screenshot.');}
  }
  if(action==='publish'){
   const previous=await current(); if(previous&&!previous.results)return json({error:'Publish results for the current tournament first'},400);
